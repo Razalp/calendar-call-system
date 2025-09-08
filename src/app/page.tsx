@@ -3,7 +3,7 @@
 import { useSession, signIn } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Calendar, Phone, Shield, Zap } from 'lucide-react'
+import { Calendar, Phone, Shield } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { useEffect } from 'react'
 import { FeatureCard } from '@/components/ui/feature-card'
