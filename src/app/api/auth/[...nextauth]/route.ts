@@ -3,7 +3,7 @@ import GoogleProvider from 'next-auth/providers/google'
 import { MongoDBAdapter } from '@auth/mongodb-adapter'
 import clientPromise from '../../../lib/mongodb'
 
-import { Session } from "next-auth";
+
 
 declare module "next-auth" {
   interface Session {
