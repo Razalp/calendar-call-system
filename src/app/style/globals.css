@@ -1,6 +1,4 @@
 @import "tailwindcss";
-@plugin "tailwindcss-animate";
-@import "tw-animate-css";
 
 @layer base {
   :root {
