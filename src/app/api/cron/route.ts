@@ -57,7 +57,8 @@ export async function GET() {
 
       if (res.data.items && res.data.items.length > 0) {
         const event = res.data.items[0]
-        const message = `Hello, this is a reminder for your upcoming event: ${event.summary}. It starts at ${new Date(event.start.dateTime).toLocaleTimeString()}.`
+        const eventStartTime = event.start && event.start.dateTime ? new Date(event.start.dateTime).toLocaleTimeString() : 'an unknown time'
+        const message = `Hello, this is a reminder for your upcoming event: ${event.summary}. It starts at ${eventStartTime}.`
 
         await twilioClient.calls.create({
           to: user.phoneNumber,

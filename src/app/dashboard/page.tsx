@@ -40,6 +40,7 @@ export default function DashboardPage() {
       const data = await response.json()
       if (response.ok) {
         setEvents(data)
+        console.log(data)
       }
     } catch (error) {
       console.error('Error fetching events:', error)
