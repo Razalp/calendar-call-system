@@ -5,9 +5,10 @@ import clientPromise from '../../../lib/mongodb'
 
 
 
-declare module "next-auth" {
+declare module 'next-auth' {
   interface Session {
-    accessToken?: string;
+    accessToken?: string
+    refreshToken?: string
   }
 }
 
@@ -19,10 +20,12 @@ const handler = NextAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       authorization: {
         params: {
-          scope: 'openid email profile https://www.googleapis.com/auth/calendar'
-        }
-      }
-    })
+          scope: 'openid email profile https://www.googleapis.com/auth/calendar',
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
+    }),
   ],
   callbacks: {
     async jwt({ token, account }) {
@@ -34,10 +37,11 @@ const handler = NextAuth({
     },
     async session({ session, token }) {
       session.accessToken = token.accessToken as string
+      session.refreshToken = token.refreshToken as string
       return session
-    }
+    },
   },
-  session: { strategy: 'jwt' }
+  session: { strategy: 'jwt' },
 })
 
 export { handler as GET, handler as POST }
