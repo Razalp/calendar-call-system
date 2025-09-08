@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Calendar, Phone, Shield, Zap } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { useEffect } from 'react'
+import { FeatureCard } from '@/components/ui/feature-card'
+import { Footer } from '@/components/ui/footer'
 
 export default function HomePage() {
   const { data: session, status } = useSession()
@@ -27,9 +29,9 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Hero Section */}
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-24 sm:py-32">
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-6">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-6 animate-fade-in-up">
             Never Miss An Important Meeting
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
@@ -37,9 +39,9 @@ export default function HomePage() {
             Stay punctual and professional with automated voice notifications.
           </p>
           
-          <Card className="max-w-md mx-auto shadow-xl border-0 bg-white/80 backdrop-blur">
+          <Card className="max-w-md mx-auto shadow-2xl border bg-white/80 backdrop-blur-lg rounded-2xl">
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl">Get Started</CardTitle>
+              <CardTitle className="text-2xl font-bold">Get Started</CardTitle>
               <CardDescription>
                 Connect your Google Calendar in seconds
               </CardDescription>
@@ -81,22 +83,7 @@ export default function HomePage() {
           />
         </div>
       </div>
+      <Footer />
     </div>
-  )
-}
-
-function FeatureCard({ icon, title, description }: { 
-  icon: React.ReactNode
-  title: string
-  description: string 
-}) {
-  return (
-    <Card className="text-center hover:shadow-lg transition-shadow bg-white/60 backdrop-blur border-0">
-      <CardContent className="pt-8">
-        <div className="mb-4 flex justify-center">{icon}</div>
-        <h3 className="text-xl font-semibold mb-2">{title}</h3>
-        <p className="text-gray-600">{description}</p>
-      </CardContent>
-    </Card>
   )
 }
