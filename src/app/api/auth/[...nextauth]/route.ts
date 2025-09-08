@@ -1,4 +1,4 @@
-import NextAuth from 'next-auth'
+import NextAuth, { type NextAuthOptions } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
 import { MongoDBAdapter } from '@auth/mongodb-adapter'
 import clientPromise from '../../../lib/mongodb'
@@ -12,7 +12,7 @@ declare module 'next-auth' {
   }
 }
 
-const handler = NextAuth({
+export const authOptions: NextAuthOptions = {
   adapter: MongoDBAdapter(clientPromise),
   providers: [
     GoogleProvider({
@@ -31,7 +31,9 @@ const handler = NextAuth({
     async jwt({ token, account }) {
       if (account) {
         token.accessToken = account.access_token
-        token.refreshToken = account.refresh_token
+        if (account.refresh_token) {
+          token.refreshToken = account.refresh_token
+        }
       }
       return token
     },
@@ -42,6 +44,8 @@ const handler = NextAuth({
     },
   },
   session: { strategy: 'jwt' },
-})
+}
+
+const handler = NextAuth(authOptions)
 
 export { handler as GET, handler as POST }

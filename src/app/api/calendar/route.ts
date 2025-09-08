@@ -1,8 +1,7 @@
 import { getServerSession } from 'next-auth/next'
 import { NextResponse } from 'next/server'
 import { google } from 'googleapis'
-import clientPromise from '../../lib/mongodb'
-import { ObjectId } from 'mongodb'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
@@ -11,30 +10,14 @@ const oauth2Client = new google.auth.OAuth2(
 )
 
 export async function GET() {
-  const session = await getServerSession()
-  if (!session || !session.user || !session.user.email) {
+  const session = await getServerSession(authOptions)
+  if (!session || !session.user || !session.user.email || !session.refreshToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {
-    const client = await clientPromise
-    const db = client.db()
-
-    const user = await db.collection('users').findOne({ email: session.user.email })
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    const account = await db.collection('accounts').findOne({
-      userId: new ObjectId(user._id)
-    })
-
-    if (!account || !account.refresh_token) {
-      return NextResponse.json({ error: 'No account or refresh token for user' }, { status: 400 })
-    }
-
     oauth2Client.setCredentials({
-      refresh_token: account.refresh_token,
+      refresh_token: session.refreshToken,
     })
 
     const { token: accessToken } = await oauth2Client.getAccessToken()
