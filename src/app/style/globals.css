@@ -79,3 +79,16 @@
     @apply bg-background text-foreground;
   }
 }
+
+.PhoneInputInput {
+    border: 1px solid hsl(var(--border));
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius);
+    width: 100%;
+}
+
+.PhoneInputCountry {
+    margin-right: 0.5rem;
+}

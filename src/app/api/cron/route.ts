@@ -44,11 +44,14 @@ export async function GET() {
 
       const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
       const now = new Date()
+      const fourMinutesFromNow = new Date(now.getTime() + 4 * 60 * 1000)
       const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000)
+
+      console.log(`Checking for events between ${fourMinutesFromNow.toISOString()} and ${fiveMinutesFromNow.toISOString()}`)
 
       const res = await calendar.events.list({
         calendarId: 'primary',
-        timeMin: now.toISOString(),
+        timeMin: fourMinutesFromNow.toISOString(),
         timeMax: fiveMinutesFromNow.toISOString(),
         maxResults: 1,
         singleEvents: true,
@@ -57,6 +60,7 @@ export async function GET() {
 
       if (res.data.items && res.data.items.length > 0) {
         const event = res.data.items[0]
+        console.log(`Found event: ${event.summary}, placing call to ${user.phoneNumber}`)
         const eventStartTime = event.start && event.start.dateTime ? new Date(event.start.dateTime).toLocaleTimeString() : 'an unknown time'
         const message = `Hello, this is a reminder for your upcoming event: ${event.summary}. It starts at ${eventStartTime}.`
 
