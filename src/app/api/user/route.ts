@@ -59,3 +59,32 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
+
+export async function DELETE() {
+  const session = await getServerSession()
+  if (!session || !session.user || !session.user.email) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
+    await clientPromise
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect(process.env.MONGODB_URI!)
+    }
+
+    const user = await User.findOneAndUpdate(
+      { email: session.user.email },
+      { $unset: { phoneNumber: "" } },
+      { new: true }
+    )
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    return NextResponse.json({ success: true, message: 'Phone number removed successfully' })
+  } catch (error) {
+    console.error('Error removing phone number:', error)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+  }
+}

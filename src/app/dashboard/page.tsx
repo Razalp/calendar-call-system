@@ -15,7 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Clock, Phone, User, Settings, Bell, CheckCircle } from "lucide-react"
+import { Calendar, Clock, Phone, User, Settings, Bell, CheckCircle, Trash2 } from "lucide-react"
 import "react-phone-number-input/style.css"
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input"
 
@@ -77,9 +77,10 @@ export default function DashboardPage() {
             // refetch events to get the next one
             fetchEvents()
           } else {
+            const hours = Math.floor(distance / (1000 * 60 * 60))
             const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))
             const seconds = Math.floor((distance % (1000 * 60)) / 1000)
-            setCountdown(`${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`)
+            setCountdown(`${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`)
           }
         }, 1000)
 
@@ -90,6 +91,34 @@ export default function DashboardPage() {
       }
     }
   }, [events])
+
+  const handleRemovePhoneNumber = async () => {
+    setIsLoading(true)
+    setMessage("")
+    try {
+      const response = await fetch("/api/user", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+      const data = await response.json()
+      if (response.ok) {
+        setPhoneNumber("")
+        sessionStorage.removeItem("phoneNumber")
+        setMessage("Phone number removed successfully!")
+        setTimeout(() => {
+          setIsPhoneModalOpen(false)
+          setMessage("")
+        }, 1500)
+      } else {
+        setMessage(data.error || "Something went wrong.")
+      }
+    } catch (error) {
+      setMessage("An error occurred.")
+    }
+    setIsLoading(false)
+  }
 
   const fetchPhoneNumber = async () => {
     try {
@@ -307,13 +336,25 @@ export default function DashboardPage() {
                               </p>
                             </div>
                           )}
-                          <Button
-                            onClick={handleSavePhoneNumber}
-                            disabled={isLoading}
-                            className="w-full bg-white text-black hover:bg-gray-200"
-                          >
-                            {isLoading ? "Saving..." : "Save Phone Number"}
-                          </Button>
+                          <div className="flex space-x-2">
+                            <Button
+                              onClick={handleSavePhoneNumber}
+                              disabled={isLoading}
+                              className="flex-1 bg-white text-black hover:bg-gray-200"
+                            >
+                              {isLoading ? "Saving..." : "Save Phone Number"}
+                            </Button>
+                            {phoneNumber && (
+                              <Button
+                                onClick={handleRemovePhoneNumber}
+                                disabled={isLoading}
+                                variant="outline"
+                                className="border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </DialogContent>
                     </Dialog>
@@ -414,7 +455,8 @@ export default function DashboardPage() {
                   <div className="space-y-4">
                     <h3 className="font-bold text-lg text-white">{nextEvent.summary}</h3>
                     <div className="relative">
-                      <div className="text-6xl font-mono font-bold text-white mb-2 tracking-wider">{countdown}</div>
+                      <div className="text-5xl font-mono font-bold text-white mb-2 tracking-wider">{countdown}</div>
+                      <div className="text-xs text-gray-400 mb-4">HH:MM:SS</div>
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse"></div>
                     </div>
                     <p className="text-gray-400 text-sm">{new Date(nextEvent.start.dateTime).toLocaleString()}</p>
