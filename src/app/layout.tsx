@@ -1,3 +1,6 @@
+import { scheduleCronJob } from "../app/lib/scheduler";
+scheduleCronJob();
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./style/globals.css";

@@ -1,8 +1,15 @@
-import { MongoClient, MongoClientOptions } from 'mongodb'
+import { MongoClient, MongoClientOptions, ServerApiVersion } from 'mongodb'
 import mongoose from 'mongoose'
 
 const uri = process.env.MONGODB_URI!
-const options: MongoClientOptions = {}
+const options: MongoClientOptions = {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  },
+  tls: true,
+}
 
 let client: MongoClient
 let clientPromise: Promise<MongoClient>

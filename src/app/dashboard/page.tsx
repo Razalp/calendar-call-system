@@ -15,7 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Clock, Phone, User, Settings, Bell, CheckCircle, Trash2 } from "lucide-react"
+import { Calendar, Clock, Phone, User, Settings, Bell, CheckCircle, Trash2, PhoneOutgoing } from "lucide-react"
 import "react-phone-number-input/style.css"
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input"
 
@@ -37,6 +37,7 @@ export default function DashboardPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [eventsLoading, setEventsLoading] = useState(true)
   const [countdown, setCountdown] = useState("")
+  const [callAlertCountdown, setCallAlertCountdown] = useState("")
   const [nextEvent, setNextEvent] = useState<CalendarEvent | null>(null)
   const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false)
   const [isCallModalOpen, setIsCallModalOpen] = useState(false)
@@ -69,18 +70,31 @@ export default function DashboardPage() {
         const interval = setInterval(() => {
           const now = new Date().getTime()
           const eventTime = new Date(next.start.dateTime).getTime()
-          const distance = eventTime - now
+          const callAlertTime = eventTime - 5 * 60 * 1000 // 5 minutes before event
+          const eventDistance = eventTime - now
+          const callDistance = callAlertTime - now
 
-          if (distance < 0) {
+          // Event countdown
+          if (eventDistance < 0) {
             clearInterval(interval)
             setCountdown("Event has started")
-            // refetch events to get the next one
-            fetchEvents()
+            setCallAlertCountdown("")
+            fetchEvents() // Refetch events to get the next one
           } else {
-            const hours = Math.floor(distance / (1000 * 60 * 60))
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000)
-            setCountdown(`${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`)
+            const eventHours = Math.floor(eventDistance / (1000 * 60 * 60))
+            const eventMinutes = Math.floor((eventDistance % (1000 * 60 * 60)) / (1000 * 60))
+            const eventSeconds = Math.floor((eventDistance % (1000 * 60)) / 1000)
+            setCountdown(`${eventHours.toString().padStart(2, "0")}:${eventMinutes.toString().padStart(2, "0")}:${eventSeconds.toString().padStart(2, "0")}`)
+          }
+
+          // Call alert countdown
+          if (callDistance > 0) {
+            const callHours = Math.floor(callDistance / (1000 * 60 * 60))
+            const callMinutes = Math.floor((callDistance % (1000 * 60 * 60)) / (1000 * 60))
+            const callSeconds = Math.floor((callDistance % (1000 * 60)) / 1000)
+            setCallAlertCountdown(`${callHours.toString().padStart(2, "0")}:${callMinutes.toString().padStart(2, "0")}:${callSeconds.toString().padStart(2, "0")}`)
+          } else {
+            setCallAlertCountdown("Call alert scheduled")
           }
         }, 1000)
 
@@ -88,6 +102,7 @@ export default function DashboardPage() {
       } else {
         setNextEvent(null)
         setCountdown("")
+        setCallAlertCountdown("")
       }
     }
   }, [events])
@@ -140,7 +155,6 @@ export default function DashboardPage() {
       const data = await response.json()
       if (response.ok) {
         setEvents(data)
-        console.log(data)
       }
     } catch (error) {
       console.error("Error fetching events:", error)
@@ -454,12 +468,25 @@ export default function DashboardPage() {
                 <CardContent className="text-center">
                   <div className="space-y-4">
                     <h3 className="font-bold text-lg text-white">{nextEvent.summary}</h3>
-                    <div className="relative">
-                      <div className="text-5xl font-mono font-bold text-white mb-2 tracking-wider">{countdown}</div>
-                      <div className="text-xs text-gray-400 mb-4">HH:MM:SS</div>
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse"></div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-center space-x-2">
+                        <Clock className="w-4 h-4 text-gray-400" />
+                        <p className="text-gray-400 text-sm">{new Date(nextEvent.start.dateTime).toLocaleString()}</p>
+                      </div>
+                      <div className="relative">
+                        <div className="text-4xl font-mono font-bold text-white mb-2 tracking-wider">{countdown}</div>
+                        <div className="text-xs text-gray-400">Time to Event (HH:MM:SS)</div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse"></div>
+                      </div>
+                      <div className="mt-4">
+                        <div className="flex items-center justify-center space-x-2">
+                          <PhoneOutgoing className="w-4 h-4 text-blue-400" />
+                          <p className="text-sm text-blue-400">Call Reminder</p>
+                        </div>
+                        <div className="text-2xl font-mono font-bold text-blue-400 mt-1">{callAlertCountdown}</div>
+                        <div className="text-xs text-gray-400">Time to Call Alert (HH:MM:SS)</div>
+                      </div>
                     </div>
-                    <p className="text-gray-400 text-sm">{new Date(nextEvent.start.dateTime).toLocaleString()}</p>
                   </div>
                 </CardContent>
               </Card>

@@ -10,7 +10,7 @@ The project is bootstrapped with create-next-app
 
 ✅ Automated phone call reminders using Twilio
 
-✅ Cron job support for periodic event checks
+✅ **Automatic** background job that runs every minute to check for events
 
 ✅ Authentication with NextAuth.js
 
@@ -70,34 +70,7 @@ npm run dev
 
 
 Then open http://localhost:3000
- in your browser.
-
-⏰ Cron Job Setup
-
-The app includes an API route at /api/cron that checks for upcoming events and sends reminders.
-
-Option 1: Vercel Cron Jobs
-
-If using Vercel, add this to your vercel.json:
-
-{
-  "crons": [
-    {
-      "path": "/api/cron",
-      "schedule": "* * * * *"
-    }
-  ]
-}
-
-Option 2: External Service
-
-If hosted elsewhere, use a service like Cron-Job.org
-. Example command:
-
-curl -X GET https://your-deployment-url/api/cron
-
-
-Schedule it to run every minute (* * * * *).
+ in your browser. The reminder service will start automatically in the background.
 
 📦 Deployment
 
@@ -110,6 +83,8 @@ Import the repo into Vercel
 Add your environment variables in the Vercel dashboard
 
 Deploy 🚀
+
+The reminder service will start automatically with the application.
 
 📚 Learn More
 
