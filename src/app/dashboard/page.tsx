@@ -20,6 +20,7 @@ import "react-phone-number-input/style.css"
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input"
 
 interface CalendarEvent {
+  id: string
   summary: string
   start: {
     dateTime: string
@@ -41,6 +42,8 @@ export default function DashboardPage() {
   const [nextEvent, setNextEvent] = useState<CalendarEvent | null>(null)
   const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false)
   const [isCallModalOpen, setIsCallModalOpen] = useState(false)
+  const [callStatus, setCallStatus] = useState<string | null>(null)
+  const [callTriggered, setCallTriggered] = useState<string | null>(null) 
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -60,12 +63,37 @@ export default function DashboardPage() {
   }, [])
 
   useEffect(() => {
+    if (nextEvent?.id) {
+      const fetchCallStatus = async () => {
+        try {
+          const response = await fetch(`/api/call-status?eventId=${nextEvent.id}`)
+          const data = await response.json()
+          if (response.ok) {
+            setCallStatus(data.status || "No call initiated yet")
+          } else {
+            setCallStatus(`Error: ${data.error}`)
+          }
+        } catch (error) {
+          setCallStatus("Error fetching call status")
+          console.error("Error fetching call status:", error)
+        }
+      }
+      fetchCallStatus()
+    }
+  }, [nextEvent])
+
+  useEffect(() => {
     if (events.length > 0) {
       const now = new Date().getTime()
       const upcomingEvents = events.filter((event) => new Date(event.start.dateTime).getTime() > now)
       if (upcomingEvents.length > 0) {
         const next = upcomingEvents[0]
         setNextEvent(next)
+
+        // Reset callTriggered if the event has changed
+        if (callTriggered !== next.id) {
+          setCallTriggered(null)
+        }
 
         const interval = setInterval(() => {
           const now = new Date().getTime()
@@ -74,12 +102,13 @@ export default function DashboardPage() {
           const eventDistance = eventTime - now
           const callDistance = callAlertTime - now
 
-          // Event countdown
           if (eventDistance < 0) {
             clearInterval(interval)
             setCountdown("Event has started")
             setCallAlertCountdown("")
-            fetchEvents() // Refetch events to get the next one
+            setCallStatus(null)
+            setCallTriggered(null)
+            fetchEvents()
           } else {
             const eventHours = Math.floor(eventDistance / (1000 * 60 * 60))
             const eventMinutes = Math.floor((eventDistance % (1000 * 60 * 60)) / (1000 * 60))
@@ -87,13 +116,17 @@ export default function DashboardPage() {
             setCountdown(`${eventHours.toString().padStart(2, "0")}:${eventMinutes.toString().padStart(2, "0")}:${eventSeconds.toString().padStart(2, "0")}`)
           }
 
-          // Call alert countdown
           if (callDistance > 0) {
             const callHours = Math.floor(callDistance / (1000 * 60 * 60))
             const callMinutes = Math.floor((callDistance % (1000 * 60 * 60)) / (1000 * 60))
             const callSeconds = Math.floor((callDistance % (1000 * 60)) / 1000)
             setCallAlertCountdown(`${callHours.toString().padStart(2, "0")}:${callMinutes.toString().padStart(2, "0")}:${callSeconds.toString().padStart(2, "0")}`)
-          } else {
+          } else if (callDistance <= 0 && callTriggered !== next.id && phoneNumber) {
+            // Trigger call only once when callDistance first reaches 0 or below
+            setCallAlertCountdown("Call alert scheduled")
+            handleCallNow(next.id)
+            setCallTriggered(next.id) // Mark this event's call as triggered
+          } else if (callDistance <= 0) {
             setCallAlertCountdown("Call alert scheduled")
           }
         }, 1000)
@@ -103,9 +136,11 @@ export default function DashboardPage() {
         setNextEvent(null)
         setCountdown("")
         setCallAlertCountdown("")
+        setCallStatus(null)
+        setCallTriggered(null)
       }
     }
-  }, [events])
+  }, [events, callTriggered, phoneNumber])
 
   const handleRemovePhoneNumber = async () => {
     setIsLoading(true)
@@ -154,7 +189,10 @@ export default function DashboardPage() {
       const response = await fetch("/api/calendar")
       const data = await response.json()
       if (response.ok) {
+        console.log("Fetched events:", data)
         setEvents(data)
+      } else {
+        console.error("Error fetching events:", data.error)
       }
     } catch (error) {
       console.error("Error fetching events:", error)
@@ -195,25 +233,31 @@ export default function DashboardPage() {
     setIsLoading(false)
   }
 
-  const handleCallNow = async () => {
+  const handleCallNow = async (eventId: string) => {
     setCallNowLoading(true)
     setCallNowMessage("")
     try {
       const response = await fetch("/api/call-now", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ eventId }),
       })
       const data = await response.json()
       if (response.ok) {
-        setCallNowMessage("Test call initiated successfully!")
+        setCallNowMessage("Reminder call initiated successfully!")
+        setCallStatus("Call initiated")
         setTimeout(() => {
-          setIsCallModalOpen(false)
           setCallNowMessage("")
         }, 2000)
       } else {
         setCallNowMessage(data.error || "Something went wrong.")
+        setCallStatus(`Error: ${data.error}`)
       }
     } catch (error) {
       setCallNowMessage("An error occurred.")
+      setCallStatus("Error initiating call")
     }
     setCallNowLoading(false)
   }
@@ -402,7 +446,7 @@ export default function DashboardPage() {
                             </div>
                           )}
                           <Button
-                            onClick={handleCallNow}
+                            onClick={() => handleCallNow(nextEvent?.id || "")}
                             disabled={callNowLoading}
                             className="w-full bg-white text-black hover:bg-gray-200"
                           >
@@ -437,7 +481,7 @@ export default function DashboardPage() {
                   <div className="space-y-4 max-h-64 overflow-y-auto custom-scrollbar">
                     {events.map((event, index) => (
                       <div
-                        key={index}
+                        key={event.id}
                         className="p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300"
                       >
                         <h4 className="font-medium text-white mb-1">{event.summary}</h4>
@@ -479,12 +523,13 @@ export default function DashboardPage() {
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse"></div>
                       </div>
                       <div className="mt-4">
-                        <div className="flex items-center justify-center space-x-2">
+                        {/* <div className="flex items-center justify-center space-x-2">
                           <PhoneOutgoing className="w-4 h-4 text-blue-400" />
                           <p className="text-sm text-blue-400">Call Reminder</p>
-                        </div>
-                        <div className="text-2xl font-mono font-bold text-blue-400 mt-1">{callAlertCountdown}</div>
-                        <div className="text-xs text-gray-400">Time to Call Alert (HH:MM:SS)</div>
+                        </div> */}
+                        {/* <div className="text-2xl font-mono font-bold text-blue-400 mt-1">{callAlertCountdown}</div>
+                        <div className="text-xs text-gray-400">Time to Call Alert (HH:MM:SS)</div> */}
+             
                       </div>
                     </div>
                   </div>

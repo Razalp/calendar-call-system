@@ -1,33 +1,29 @@
 import cron from 'node-cron'
 import { checkMeetingsAndSendReminders } from './cron-logic'
 
-// A global symbol to ensure the cron job is scheduled only once.
 const CRON_JOB_SCHEDULED = Symbol.for('cron_job_scheduled')
 
-/**
- * Schedules the cron job if it hasn't been scheduled already.
- * This function is designed to be safe to call multiple times.
- */
 export function scheduleCronJob() {
-  // Check if the job is already scheduled in the global scope
   if ((global as any)[CRON_JOB_SCHEDULED]) {
     console.log('Cron job has already been scheduled. Skipping.')
     return
   }
 
-  console.log('Scheduling cron job...')
+  console.log('Scheduling cron job to run every 10 seconds...')
 
-  // Schedule the job to run every 10 seconds
-  cron.schedule('*/10 * * * * *', async () => {
-    console.log('Executing scheduled job: checkMeetingsAndSendReminders')
+  cron.schedule('* * * * *', async () => {
+    console.log('Executing scheduled job: checkMeetingsAndSendReminders at', new Date().toISOString())
     try {
-      await checkMeetingsAndSendReminders()
-    } catch (error) {
-      console.error('Error in cron job execution:', error)
+      const result = await checkMeetingsAndSendReminders()
+      console.log('Cron job result:', JSON.stringify(result))
+    } catch (error: any) {
+      console.error('Error in cron job execution:', {
+        message: error.message,
+        stack: error.stack,
+      })
     }
   })
 
-  // Mark the job as scheduled in the global scope.
   ;(global as any)[CRON_JOB_SCHEDULED] = true
-  console.log('Cron job successfully scheduled to run every 10 seconds.')
+  console.log('Cron job successfully scheduled.')
 }

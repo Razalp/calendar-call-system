@@ -31,7 +31,7 @@ export async function POST() {
 
     try {
       const twilioClient = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-      const message = `Hello, this is a test call from the reminder service.`
+      const message = `Hello, this is a reminder for your upcoming event on your google calender`
 
       await twilioClient.calls.create({
         to: user.phoneNumber,
